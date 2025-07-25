@@ -40,8 +40,6 @@ export const loginUser = async (req, res) => {
 
   if (error) return res.status(401).json({ error: error.message });
 
-  const token = data.session.access_token;
-
   res.cookie("sb-access-token", data.session.access_token, {
     httpOnly: true,
     secure: true,
@@ -64,6 +62,12 @@ export const forgotPassword = (req, res) => {
 export const logoutUser = async (req, res) => {
   try {
     res.clearCookie("sb-access-token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
+
+    res.clearCookie("sb-refresh-token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
