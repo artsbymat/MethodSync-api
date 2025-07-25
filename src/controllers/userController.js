@@ -1,30 +1,14 @@
-import { createClient } from "@supabase/supabase-js";
+export const refreshToken = async (req, res) => {
+  const refresh_token = req.cookies["sb-refresh-token"];
 
-export const getUserProfile = async (req, res) => {
-  const token = req.cookies["sb-access-token"];
+  const { data, error } = await supabase.auth.refreshSession({ refresh_token });
 
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  if (error) return res.status(401).json({ error: "Token refresh failed" });
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    },
-  );
+  res.setHeader("Set-Cookie", [
+    `sb-access-token=${data.session.access_token}; Path=/; HttpOnly`,
+    `sb-refresh-token=${data.session.refresh_token}; Path=/; HttpOnly`,
+  ]);
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error) return res.status(400).json({ error: error.message });
-
-  res.json({ user });
+  return res.status(200).json({ message: "Token refreshed" });
 };

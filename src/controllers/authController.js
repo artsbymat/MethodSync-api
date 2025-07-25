@@ -42,11 +42,16 @@ export const loginUser = async (req, res) => {
 
   const token = data.session.access_token;
 
-  res.cookie("sb-access-token", token, {
+  res.cookie("sb-access-token", data.session.access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
-    maxAge: 60 * 60 * 24 * 7 * 1000,
+    secure: true,
+    path: "/",
+  });
+
+  res.cookie("sb-refresh-token", data.session.refresh_token, {
+    httpOnly: true,
+    secure: true,
+    path: "/",
   });
 
   res.status(200).json({ message: "Login successful", user: data.user });

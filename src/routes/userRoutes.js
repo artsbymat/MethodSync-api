@@ -1,8 +1,10 @@
 import express from "express";
-import { getUserProfile } from "../controllers/userController.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-router.get("/", getUserProfile);
+router.get("/", authMiddleware, async (req, res) => {
+  res.json({ user: req.user });
+});
 
 export default router;
