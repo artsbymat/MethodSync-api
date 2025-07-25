@@ -6,13 +6,20 @@ export const getChallenges = async (req, res) => {
   const accessToken = req.cookies["sb-access-token"];
   const supabase = getSupabaseClientWithToken(accessToken);
 
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = 3;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
   const { data, error } = await supabase
     .from("challenges")
     .select("*")
     .is("deleted_at", null)
     .or(
       `is_published.eq.true,and(author_id.eq.${user.id},is_published.eq.false)`,
-    );
+    )
+    .range(from, to)
+    .order("created_at", { ascending: false });
 
   if (error) {
     return res.status(500).json({ error: error.message });
