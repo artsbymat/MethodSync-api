@@ -28,6 +28,58 @@ export const getChallenges = async (req, res) => {
   return res.status(200).json(data);
 };
 
+export const getChallenge = async (req, res) => {
+  const user = req.user;
+
+  const accessToken = req.cookies["sb-access-token"];
+  const supabase = getSupabaseClientWithToken(accessToken);
+
+  const { slug } = req.params;
+
+  if (!slug) {
+    return res.status(400).json({ error: "Challenge ID is required" });
+  }
+
+  const { data, error } = await supabase
+    .from("challenges")
+    .select("*")
+    .eq("slug", slug)
+    .is("deleted_at", null)
+    .or(
+      `is_published.eq.true,and(author_id.eq.${user.id},is_published.eq.false)`,
+    )
+    .single();
+
+  if (!data) {
+    return res.status(404).json({ error: "Challenge not found" });
+  }
+
+  if (data.is_published === false && data.author_id !== user.id) {
+    return res.status(403).json({
+      error: "You do not have permission to view this challenge",
+    });
+  }
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  // Remove sensitive fields
+  const {
+    author_id,
+    created_at,
+    updated_at,
+    deleted_at,
+    is_published,
+    ...challengeData
+  } = data;
+  const challenge = {
+    ...challengeData,
+  };
+
+  return res.status(200).json(challenge);
+};
+
 export const createChallenge = async (req, res) => {
   const user = req.user;
   const { ...challengeData } = req.body;
